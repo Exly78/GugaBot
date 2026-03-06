@@ -9,6 +9,30 @@ import psutil
 import io
 import urllib.request
 
+# Force UTF-8 output so emojis don't crash on Windows cp1252
+if sys.stdout.encoding != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr.encoding != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+# ── Single instance lock ──────────────────
+import tempfile
+_lock_path = os.path.join(tempfile.gettempdir(), "gugabot.lock")
+try:
+    if os.path.exists(_lock_path):
+        with open(_lock_path, "r") as f:
+            old_pid = int(f.read().strip())
+        if psutil.pid_exists(old_pid):
+            print(f"❌ Bot already running (PID {old_pid}). Exiting.")
+            sys.exit(0)
+    with open(_lock_path, "w") as f:
+        f.write(str(os.getpid()))
+    import atexit
+    atexit.register(lambda: os.unlink(_lock_path) if os.path.exists(_lock_path) else None)
+except Exception as e:
+    print(f"⚠️ Lock file error: {e}")
+
+
 # Windows-only
 if sys.platform == "win32":
     import ctypes
@@ -1134,15 +1158,15 @@ def check_update():
                 f.write(r.read())
 
         if remote != local:
-            print("🔄 Update found, applying...")
+            print("[*] Update found, applying...")
             with open(os.path.abspath(__file__), "wb") as f:
                 f.write(remote)
-            print("✅ Updated. Restarting...")
+            print("[*] Updated. Restarting...")
             os.execv(sys.executable, [sys.executable] + sys.argv)
         else:
-            print("✅ Already up to date.")
+            print("[OK] Already up to date.")
     except Exception as e:
-        print(f"⚠️ Update check failed: {e} | URL: {UPDATE_URL}")
+        print(f"[!] Update check failed: {e} | URL: {UPDATE_URL}")
 
 # Check for update on startup
 check_update()
