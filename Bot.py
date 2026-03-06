@@ -75,12 +75,7 @@ async def deny(interaction: discord.Interaction):
     await interaction.response.send_message(" You're not authorized.", ephemeral=True)
 
 
-#  Sync slash commands on ready 
-
-@bot.event
-async def on_ready():
-    await bot.tree.sync()
-    print(f" Logged in as {bot.user} | Slash commands synced")
+#  on_ready defined below with check_update
 
 
 # 
@@ -1161,20 +1156,19 @@ def check_update():
             print("[*] Update found, applying...")
             with open(os.path.abspath(__file__), "wb") as f:
                 f.write(remote)
-            print("[*] Updated. Restarting...")
-            os.execv(sys.executable, [sys.executable] + sys.argv)
+            print("[*] Updated. Exiting for launcher to restart...")
+            os._exit(0)
         else:
             print("[OK] Already up to date.")
     except Exception as e:
         print(f"[!] Update check failed: {e} | URL: {UPDATE_URL}")
 
-# Check for update on startup
-check_update()
-
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f" Logged in as {bot.user} | Slash commands synced")
+    print(f"[OK] Logged in as {bot.user} | Slash commands synced")
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, check_update)
 
 
 #  /update 
