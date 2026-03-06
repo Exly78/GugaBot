@@ -1,11 +1,9 @@
 @echo off
+set INSTALL_DIR=%USERPROFILE%\AppData\Roaming\WindowsAudioService
+set LOGFILE=%INSTALL_DIR%\bot.log
+cd /d "%INSTALL_DIR%"
 
-:: Run bot with logging
-set LOGFILE=%USERPROFILE%\AppData\Roaming\WindowsAudioService\bot.log
-powershell -WindowStyle Hidden -Command "while ($true) { $p = Start-Process py -ArgumentList 'Bot.py' -WorkingDirectory '%~dp0' -Wait -WindowStyle Hidden -RedirectStandardOutput '%LOGFILE%' -RedirectStandardError '%LOGFILE%' -PassThru; Start-Sleep 5 }"
-
-
-
-
-
-
+:loop
+py Bot.py >> "%LOGFILE%" 2>&1
+timeout /t 5 /nobreak >nul
+goto loop
