@@ -1135,7 +1135,7 @@ def check_update():
         else:
             print("✅ Already up to date.")
     except Exception as e:
-        print(f"⚠️ Update check failed: {e}")
+        print(f"⚠️ Update check failed: {e} | URL: {UPDATE_URL}")
 
 # Check for update on startup
 check_update()
