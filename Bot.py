@@ -1065,7 +1065,7 @@ async def wallpaper_prefix(ctx, url: str):
         await ctx.send(f"❌ Error: {e}")
 
 @bot.command(name="lock")
-async def lock_prefix(ctx, seconds: int = 0):
+async def lock_prefix(ctx, seconds: int = 5):
     if not authorized(ctx.author.id): return await ctx.send("❌ You're not authorized.")
     if sys.platform == "win32":
         result = ctypes.windll.user32.BlockInput(True)
