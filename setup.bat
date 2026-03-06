@@ -51,7 +51,7 @@ echo [OK] dependencies.txt downloaded.
 echo.
 echo [*] Installing dependencies...
 py -m pip install --upgrade pip >nul 2>&1
-py -m pip install discord.py psutil pillow opencv-python pyautogui sounddevice soundfile aiohttp
+py -m pip install discord.py psutil pillow opencv-python pyautogui sounddevice soundfile aiohttp cryptography
 echo [OK] Dependencies installed.
 
 echo.
