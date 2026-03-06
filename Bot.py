@@ -16,7 +16,7 @@ if sys.platform == "win32":
 # ─────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────
-BOT_TOKEN = "MTMyMDE4MzAzNDkyMTc0NjQ2Mw.Gx4Sv-.IKLKAYbVJ8T7PSarXv5sagabZkbqRHUt5qvJGI"
+BOT_TOKEN = "MTMyMDE4MzAzNDkyMTc0NjQ2Mw.GqURKI.j8RvoBEZNdnR-qLUFgInm_wh176lisRPe30eF0"
 
 AUTHORIZED_USERS = {
     1299029672398684223,  
@@ -1169,4 +1169,5 @@ async def update_prefix(ctx):
 
 
 # ─────────────────────────────────────────
+
 bot.run(BOT_TOKEN)
