@@ -6,16 +6,21 @@ set "PYTHON="
 
 echo [%date% %time%] Launcher started >> "%LOGFILE%"
 
-:: Search common install locations in order
+:: Check known paths on this machine first
 for %%P in (
-    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "C:\Program Files (x86)\Python314-32\python.exe"
+    "C:\Program Files (x86)\Python313-32\python.exe"
+    "C:\Program Files (x86)\Python312-32\python.exe"
+    "C:\Program Files (x86)\Python311-32\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python314\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
     "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
-    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
-    "%LOCALAPPDATA%\Programs\Python\Python39\python.exe"
-    "C:\Python311\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "C:\Python314\python.exe"
+    "C:\Python313\python.exe"
     "C:\Python312\python.exe"
-    "C:\Program Files\Python311\python.exe"
-    "C:\Program Files\Python312\python.exe"
+    "C:\Python311\python.exe"
+    "C:\Python27\python.exe"
 ) do (
     if exist %%P (
         set "PYTHON=%%~P"
@@ -23,22 +28,26 @@ for %%P in (
     )
 )
 
-:: Last resort: use where.exe but filter out WindowsApps (Store alias)
-for /f "delims=" %%i in ('where python 2^>nul') do (
-    echo %%i | findstr /i "WindowsApps" >nul
-    if errorlevel 1 (
-        set "PYTHON=%%i"
-        goto :found
+:: Fallback: use py launcher directly (bypasses WindowsApps alias)
+set "PY_LAUNCHER=C:\Windows\py.exe"
+if not exist "%PY_LAUNCHER%" set "PY_LAUNCHER=%LOCALAPPDATA%\Programs\Python\Launcher\py.exe"
+if exist "%PY_LAUNCHER%" (
+    for /f "delims=" %%i in ('"%PY_LAUNCHER%" -3 -c "import sys; print(sys.executable)" 2^>nul') do (
+        echo %%i | findstr /i "WindowsApps" >nul
+        if errorlevel 1 (
+            set "PYTHON=%%i"
+            goto :found
+        )
     )
 )
 
 :notfound
-echo [%date% %time%] ERROR: Python not found anywhere >> "%LOGFILE%"
+echo [%date% %time%] ERROR: Python not found >> "%LOGFILE%"
 timeout /t 60 >nul
 exit /b 1
 
 :found
-echo [%date% %time%] Using: "%PYTHON%" >> "%LOGFILE%"
+echo [%date% %time%] Using: "!PYTHON!" >> "%LOGFILE%"
 
 cd /d "%INSTALL_DIR%" || (
     echo [%date% %time%] ERROR: Could not cd to install dir >> "%LOGFILE%"
@@ -47,7 +56,7 @@ cd /d "%INSTALL_DIR%" || (
 
 :loop
 echo [%date% %time%] Starting Bot.py >> "%LOGFILE%"
-"%PYTHON%" Bot.py >> "%LOGFILE%" 2>&1
+"!PYTHON!" Bot.py >> "%LOGFILE%" 2>&1
 echo [%date% %time%] Bot exited, restarting in 5s >> "%LOGFILE%"
 timeout /t 5 >nul
 goto loop
