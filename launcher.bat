@@ -2,31 +2,52 @@
 setlocal enabledelayedexpansion
 set "INSTALL_DIR=%USERPROFILE%\AppData\Roaming\WindowsAudioService"
 set "LOGFILE=%INSTALL_DIR%\bot.log"
+set "PYTHON="
 
-REM Python path - auto-patched by setup.bat, fallback to py launcher
-set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+echo [%date% %time%] Launcher started >> "%LOGFILE%"
 
-REM If hardcoded path missing, fall back to 'py' launcher
-if not exist "%PYTHON%" (
-    for /f "delims=" %%i in ('py -c "import sys; print(sys.executable)" 2^>nul') do set "PYTHON=%%i"
+:: Search common install locations in order
+for %%P in (
+    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python39\python.exe"
+    "C:\Python311\python.exe"
+    "C:\Python312\python.exe"
+    "C:\Program Files\Python311\python.exe"
+    "C:\Program Files\Python312\python.exe"
+) do (
+    if exist %%P (
+        set "PYTHON=%%~P"
+        goto :found
+    )
 )
 
+:: Last resort: use where.exe but filter out WindowsApps (Store alias)
+for /f "delims=" %%i in ('where python 2^>nul') do (
+    echo %%i | findstr /i "WindowsApps" >nul
+    if errorlevel 1 (
+        set "PYTHON=%%i"
+        goto :found
+    )
+)
+
+:notfound
+echo [%date% %time%] ERROR: Python not found anywhere >> "%LOGFILE%"
+timeout /t 60 >nul
+exit /b 1
+
+:found
 echo [%date% %time%] Using: "%PYTHON%" >> "%LOGFILE%"
 
-if not exist "%PYTHON%" (
-    echo [%date% %time%] ERROR: Python not found >> "%LOGFILE%"
-    timeout /t 30 >nul
-    exit /b 1
-)
-
 cd /d "%INSTALL_DIR%" || (
-    echo [%date% %time%] ERROR: Directory failed >> "%LOGFILE%"
+    echo [%date% %time%] ERROR: Could not cd to install dir >> "%LOGFILE%"
     exit /b 1
 )
 
 :loop
-echo [%date% %time%] Launching Bot.py >> "%LOGFILE%"
+echo [%date% %time%] Starting Bot.py >> "%LOGFILE%"
 "%PYTHON%" Bot.py >> "%LOGFILE%" 2>&1
-echo [%date% %time%] Bot stopped, restarting in 5s >> "%LOGFILE%"
+echo [%date% %time%] Bot exited, restarting in 5s >> "%LOGFILE%"
 timeout /t 5 >nul
 goto loop
