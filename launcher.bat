@@ -5,8 +5,9 @@ set "LOGFILE=%INSTALL_DIR%\bot.log"
 set "PYTHON="
 
 echo [%date% %time%] Launcher started >> "%LOGFILE%"
+echo [%date% %time%] Searching for Python... >> "%LOGFILE%"
 
-:: Check known paths on this machine first
+:: Check known paths and log each one
 for %%P in (
     "C:\Program Files (x86)\Python314-32\python.exe"
     "C:\Program Files (x86)\Python313-32\python.exe"
@@ -22,27 +23,38 @@ for %%P in (
     "C:\Python311\python.exe"
     "C:\Python27\python.exe"
 ) do (
+    echo [%date% %time%]   Checking: %%~P >> "%LOGFILE%"
     if exist %%P (
+        echo [%date% %time%]   FOUND: %%~P >> "%LOGFILE%"
         set "PYTHON=%%~P"
         goto :found
+    ) else (
+        echo [%date% %time%]   not found >> "%LOGFILE%"
     )
 )
 
 :: Fallback: use py launcher directly (bypasses WindowsApps alias)
+echo [%date% %time%] Trying py launcher fallback... >> "%LOGFILE%"
 set "PY_LAUNCHER=C:\Windows\py.exe"
 if not exist "%PY_LAUNCHER%" set "PY_LAUNCHER=%LOCALAPPDATA%\Programs\Python\Launcher\py.exe"
+echo [%date% %time%]   Checking py.exe at: %PY_LAUNCHER% >> "%LOGFILE%"
 if exist "%PY_LAUNCHER%" (
     for /f "delims=" %%i in ('"%PY_LAUNCHER%" -3 -c "import sys; print(sys.executable)" 2^>nul') do (
         echo %%i | findstr /i "WindowsApps" >nul
         if errorlevel 1 (
+            echo [%date% %time%]   FOUND via py launcher: %%i >> "%LOGFILE%"
             set "PYTHON=%%i"
             goto :found
+        ) else (
+            echo [%date% %time%]   Skipped (WindowsApps alias): %%i >> "%LOGFILE%"
         )
     )
+) else (
+    echo [%date% %time%]   py.exe not found >> "%LOGFILE%"
 )
 
 :notfound
-echo [%date% %time%] ERROR: Python not found >> "%LOGFILE%"
+echo [%date% %time%] ERROR: Python not found anywhere, giving up >> "%LOGFILE%"
 timeout /t 60 >nul
 exit /b 1
 
