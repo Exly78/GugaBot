@@ -1,34 +1,32 @@
 @echo off
-set INSTALL_DIR=%USERPROFILE%\AppData\Roaming\WindowsAudioService
-set LOGFILE=%INSTALL_DIR%\bot.log
+setlocal enabledelayedexpansion
+set "INSTALL_DIR=%USERPROFILE%\AppData\Roaming\WindowsAudioService"
+set "LOGFILE=%INSTALL_DIR%\bot.log"
 
-REM Find Python - scheduled task proof
-set PYTHON=
-for /f "tokens=*" %%i in ('where python.exe 2^>nul') do (
-    set PYTHON=%%i
-    goto :found_python
+REM Python path - auto-patched by setup.bat, fallback to py launcher
+set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+
+REM If hardcoded path missing, fall back to 'py' launcher
+if not exist "%PYTHON%" (
+    for /f "delims=" %%i in ('py -c "import sys; print(sys.executable)" 2^>nul') do set "PYTHON=%%i"
 )
-:found_python
-if not defined PYTHON for /f "tokens=*" %%i in ('where py 2^>nul') do set PYTHON=%%i
 
-REM Fallback paths if where fails
-if not defined PYTHON set PYTHON=%LOCALAPPDATA%\Programs\Python\Python311\python.exe
-if not defined PYTHON set PYTHON=%LOCALAPPDATA%\Programs\Python\Python314\python.exe
-if not defined PYTHON set PYTHON=C:\Python311\python.exe
-if not defined PYTHON set PYTHON=C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python311\python.exe
+echo [%date% %time%] Using: "%PYTHON%" >> "%LOGFILE%"
+
+if not exist "%PYTHON%" (
+    echo [%date% %time%] ERROR: Python not found >> "%LOGFILE%"
+    timeout /t 30 >nul
+    exit /b 1
+)
 
 cd /d "%INSTALL_DIR%" || (
-    echo [%date% %time%] FAILED to cd to %INSTALL_DIR% >> "%LOGFILE%"
+    echo [%date% %time%] ERROR: Directory failed >> "%LOGFILE%"
     exit /b 1
 )
 
 :loop
-echo [%date% %time%] Starting Bot.py >> "%LOGFILE%"
-if defined PYTHON (
-    "%PYTHON%" Bot.py >> "%LOGFILE%" 2>&1
-) else (
-    echo [%date% %time%] NO PYTHON FOUND - ABORT >> "%LOGFILE%"
-)
-echo [%date% %time%] Bot exited, restarting in 5s >> "%LOGFILE%"
-timeout /t 5 /nobreak >nul 2>nul
+echo [%date% %time%] Launching Bot.py >> "%LOGFILE%"
+"%PYTHON%" Bot.py >> "%LOGFILE%" 2>&1
+echo [%date% %time%] Bot stopped, restarting in 5s >> "%LOGFILE%"
+timeout /t 5 >nul
 goto loop
