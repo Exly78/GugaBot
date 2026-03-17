@@ -7,7 +7,7 @@ set "PYTHON="
 echo [%date% %time%] Launcher started >> "%LOGFILE%"
 echo [%date% %time%] Searching for Python... >> "%LOGFILE%"
 
-:: Check known paths and log each one
+:: Check known paths and log each onedsfdsfsd
 for %%P in (
     "C:\Program Files (x86)\Python314-32\python.exe"
     "C:\Program Files (x86)\Python313-32\python.exe"
